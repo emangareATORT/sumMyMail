@@ -11,7 +11,6 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox, ttk
 import configparser
 import os
-import sys
 from openai import OpenAI
 
 
