@@ -18,6 +18,8 @@ from openai import OpenAI
 class EmailSummarizerApp:
     # Model configuration
     MODEL_NAME = "gpt-4o"
+    TEMPERATURE = 0.3
+    MAX_TOKENS = 1000
     
     def __init__(self, root):
         self.root = root
@@ -32,7 +34,8 @@ class EmailSummarizerApp:
                 "API key not found. Please create a config.ini file with your OpenAI API key.\n"
                 "See config.ini.example for the format."
             )
-            sys.exit(1)
+            self.root.destroy()
+            return
         
         self.client = OpenAI(api_key=self.api_key)
         self.setup_ui()
@@ -173,8 +176,8 @@ PARTICIPANTS:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Email thread:\n\n{email_text}"}
             ],
-            temperature=0.3,
-            max_tokens=1000
+            temperature=self.TEMPERATURE,
+            max_tokens=self.MAX_TOKENS
         )
         
         return response.choices[0].message.content
