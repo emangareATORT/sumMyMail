@@ -71,12 +71,11 @@ class ActionItemsWindow:
                     font=("Arial", 11),
                     wraplength=550,
                     anchor="w",
-                    justify="left",
-                    command=lambda v=var, c=None: self.on_check(v, c)
+                    justify="left"
                 )
                 checkbox.pack(fill=tk.X, padx=20, pady=5, anchor="w")
                 self.checkboxes.append((checkbox, var))
-                # Store the checkbox reference in the lambda
+                # Configure command after creation to capture checkbox reference properly
                 checkbox.config(command=lambda v=var, c=checkbox: self.on_check(v, c))
         else:
             no_items_label = tk.Label(
