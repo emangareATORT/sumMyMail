@@ -16,6 +16,9 @@ from openai import OpenAI
 
 
 class EmailSummarizerApp:
+    # Model configuration
+    MODEL_NAME = "gpt-4o"
+    
     def __init__(self, root):
         self.root = root
         self.root.title("sumMyMail - Email Thread Summarizer")
@@ -29,8 +32,7 @@ class EmailSummarizerApp:
                 "API key not found. Please create a config.ini file with your OpenAI API key.\n"
                 "See config.ini.example for the format."
             )
-            self.root.destroy()
-            return
+            sys.exit(1)
         
         self.client = OpenAI(api_key=self.api_key)
         self.setup_ui()
@@ -166,7 +168,7 @@ PARTICIPANTS:
 """
         
         response = self.client.chat.completions.create(
-            model="gpt-4o",
+            model=self.MODEL_NAME,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"Email thread:\n\n{email_text}"}
