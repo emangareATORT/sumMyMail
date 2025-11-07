@@ -11,7 +11,104 @@ import tkinter as tk
 from tkinter import scrolledtext, messagebox, ttk
 import configparser
 import os
+import re
 from openai import OpenAI
+
+
+class ActionItemsWindow:
+    """Window to display action items in a To-Do list format"""
+    
+    def __init__(self, parent, action_items):
+        self.window = tk.Toplevel(parent)
+        self.window.title("Action Items To-Do List")
+        self.window.geometry("600x500")
+        
+        # Title
+        title_label = tk.Label(
+            self.window,
+            text="📋 Action Items for Eduardo Mangarelli",
+            font=("Arial", 14, "bold"),
+            pady=10
+        )
+        title_label.pack()
+        
+        # Instructions
+        instructions = tk.Label(
+            self.window,
+            text="Check off items as you complete them",
+            font=("Arial", 9),
+            fg="gray"
+        )
+        instructions.pack()
+        
+        # Create scrolled frame for checkboxes
+        canvas_frame = tk.Frame(self.window)
+        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        canvas = tk.Canvas(canvas_frame)
+        scrollbar = tk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+        
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+        
+        # Parse and display action items
+        self.checkboxes = []
+        self.action_items = action_items
+        
+        if action_items and len(action_items) > 0:
+            for idx, item in enumerate(action_items, 1):
+                var = tk.BooleanVar()
+                checkbox = tk.Checkbutton(
+                    scrollable_frame,
+                    text=item,
+                    variable=var,
+                    font=("Arial", 11),
+                    wraplength=550,
+                    anchor="w",
+                    justify="left",
+                    command=lambda v=var, c=None: self.on_check(v, c)
+                )
+                checkbox.pack(fill=tk.X, padx=20, pady=5, anchor="w")
+                self.checkboxes.append((checkbox, var))
+                # Store the checkbox reference in the lambda
+                checkbox.config(command=lambda v=var, c=checkbox: self.on_check(v, c))
+        else:
+            no_items_label = tk.Label(
+                scrollable_frame,
+                text="No specific action items identified",
+                font=("Arial", 11),
+                fg="gray"
+            )
+            no_items_label.pack(pady=20)
+        
+        canvas.pack(side="left", fill=tk.BOTH, expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Close button
+        close_button = tk.Button(
+            self.window,
+            text="Close",
+            command=self.window.destroy,
+            font=("Arial", 10),
+            padx=20,
+            pady=5
+        )
+        close_button.pack(pady=10)
+    
+    def on_check(self, var, checkbox):
+        """Handle checkbox state changes"""
+        if var.get():
+            # Item is checked - show strikethrough effect
+            checkbox.config(fg="gray")
+        else:
+            # Item is unchecked - remove strikethrough effect
+            checkbox.config(fg="black")
 
 
 class EmailSummarizerApp:
@@ -24,6 +121,9 @@ class EmailSummarizerApp:
         self.root = root
         self.root.title("sumMyMail - Email Thread Summarizer")
         self.root.geometry("900x700")
+        
+        # Store action items for To-Do window
+        self.current_action_items = []
         
         # Load API key
         self.api_key = self.load_api_key()
@@ -98,6 +198,19 @@ class EmailSummarizerApp:
         )
         self.process_button.pack(pady=10)
         
+        # Open To-Do button (initially hidden)
+        self.todo_button = tk.Button(
+            self.root,
+            text="📋 Open Action Items To-Do List",
+            command=self.open_todo_window,
+            bg="#2196F3",
+            fg="white",
+            font=("Arial", 11, "bold"),
+            padx=20,
+            pady=8
+        )
+        # Don't pack it yet - will be shown after processing
+        
         # Progress bar
         self.progress = ttk.Progressbar(
             self.root,
@@ -137,8 +250,15 @@ class EmailSummarizerApp:
             # Call GPT-4o API
             result = self.analyze_email_thread(email_text)
             
+            # Extract action items
+            self.current_action_items = self.extract_action_items(result)
+            
             # Display results
             self.display_results(result)
+            
+            # Show To-Do button if there are action items
+            if self.current_action_items:
+                self.todo_button.pack(pady=5)
             
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
@@ -180,6 +300,39 @@ PARTICIPANTS:
         )
         
         return response.choices[0].message.content
+    
+    def extract_action_items(self, results):
+        """Extract action items from the GPT-4o response"""
+        action_items = []
+        
+        # Find the ACTION ITEMS section
+        lines = results.split('\n')
+        in_action_section = False
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Check if we're entering the action items section
+            if 'ACTION ITEMS FOR EDUARDO MANGARELLI' in line.upper():
+                in_action_section = True
+                continue
+            
+            # Check if we're leaving the action items section
+            if in_action_section and line.startswith('PARTICIPANTS'):
+                break
+            
+            # Extract action items (lines starting with -)
+            if in_action_section and line.startswith('-'):
+                item = line[1:].strip()  # Remove the dash and whitespace
+                # Skip the "No specific action items" message
+                if item and 'no specific action items' not in item.lower():
+                    action_items.append(item)
+        
+        return action_items
+    
+    def open_todo_window(self):
+        """Open the To-Do list window with action items"""
+        ActionItemsWindow(self.root, self.current_action_items)
     
     def display_results(self, results):
         """Display the analysis results"""
