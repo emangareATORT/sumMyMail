@@ -16,6 +16,10 @@ Designed for quick insight extraction and follow-up management.
   - Concise summary of the email thread
   - Specific action items for Eduardo Mangarelli
   - Complete list of all participants
+- **Action Items To-Do List**: View action items in a separate interactive window
+  - Checkbox format for easy task tracking
+  - Visual feedback when items are completed
+  - Reusable - open the window multiple times as needed
 
 ## Requirements
 
@@ -71,6 +75,11 @@ python sumMyMail.py
    - Summary of the thread
    - Action items for Eduardo Mangarelli
    - List of participants
+
+7. (Optional) Click the "📋 Open Action Items To-Do List" button to view your action items in a separate window:
+   - Check off items as you complete them
+   - Items turn gray when marked as done
+   - Close the window when finished
 
 ## Configuration
 
